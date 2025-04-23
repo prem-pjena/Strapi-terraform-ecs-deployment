@@ -68,6 +68,8 @@ jobs:
         run: |
           ALB_URL=$(terraform output -raw alb_public_url)
           echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV
+          echo "✅ ALB_URL set to: $ALB_URL"
 
       - name: Notify with Public ALB URL
-        run: echo "Strapi deployed at: ${{ env.ALB_URL }}"
+        run: |
+          echo "🚀 Strapi is now deployed at: $ALB_URL"
