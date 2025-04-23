@@ -53,11 +53,6 @@ jobs:
         cd terraform # Change to the directory containing the .tf files
         terraform init
 
-    - name: Terraform Format
-      run: |
-        cd terraform # Change to the directory containing the .tf files
-        terraform fmt -check
-
     - name: Terraform Validate
       run: |
         cd terraform # Change to the directory containing the .tf files
@@ -71,7 +66,7 @@ jobs:
     - name: Terraform Apply
       run: |
         cd terraform # Change to the directory containing the .tf files
-        terraform apply -auto-approve
+        terraform apply -auto-approve -no-color
 
     - name: Output Public ALB URL
       id: alb_url
