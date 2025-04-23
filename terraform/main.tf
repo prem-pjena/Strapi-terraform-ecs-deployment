@@ -157,16 +157,21 @@ resource "aws_security_group" "strapi-sg" {
 }
 
 # Application Load Balancer (ALB)
-resource "aws_lb" "strapi-alb" {
+resource "aws_lb" "strapi_lb" {
   name               = "strapi-alb"
   internal           = false
   load_balancer_type = "application"
-  security_groups    = [aws_security_group.strapi-sg.id]
-  subnets            = [aws_subnet.subnet_a.id, aws_subnet.subnet_b.id]
+  security_groups    = [aws_security_group.strapi_sg.id]
+  subnets            = aws_subnet.subnet_ids
+  enable_deletion_protection = false
 
-  enable_deletion_protection     = false
   enable_cross_zone_load_balancing = true
+
+  tags = {
+    Name = "strapi-alb"
+  }
 }
+
 
 # ALB Target Group (Use IP Target Type for Fargate)
 resource "aws_lb_target_group" "strapi-tg" {
