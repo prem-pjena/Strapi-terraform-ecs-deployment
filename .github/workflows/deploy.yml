@@ -10,7 +10,6 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
-  ALB_PUBLIC_URL_OUTPUT: alb_public_url
 
 jobs:
   deploy:
@@ -28,22 +27,19 @@ jobs:
           aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
+      - name: Login to Amazon ECR
         uses: aws-actions/amazon-ecr-login@v2
-
-      - name: Debug- Print ENV Values
-        run: |
-          echo "DEBUG AWS_REGION: $AWS_REGION"
-          echo "DEBUG ECR_REGISTRY: $ECR_REGISTRY"
-          echo "DEBUG ECR_REPOSITORY: $ECR_REPOSITORY"
 
       - name: Build Docker Image
         run: |
-          docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+          IMAGE_TAG="${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          docker build -t "$IMAGE_TAG" -f docker/Dockerfile .
+          echo "Built image: $IMAGE_TAG"
 
       - name: Push Docker Image to ECR
-        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+        run: |
+          IMAGE_TAG="${ECR_REGISTRY}/${ECR_REPOSITORY}:latest"
+          docker push "$IMAGE_TAG"
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
@@ -68,8 +64,7 @@ jobs:
         run: |
           ALB_URL=$(terraform output -raw alb_public_url)
           echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV
-          echo "✅ ALB_URL set to: $ALB_URL"
 
-      - name: Notify with Public ALB URL
+      - name: Notify Deployment Success
         run: |
-          echo "🚀 Strapi is now deployed at: $ALB_URL"
+          echo "Strapi is now deployed at: $ALB_URL"
