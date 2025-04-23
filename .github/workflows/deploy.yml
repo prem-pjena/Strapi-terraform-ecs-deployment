@@ -9,7 +9,7 @@ env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}  # Make sure to set region in Terraform variables
+  TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   deploy:
@@ -46,22 +46,9 @@ jobs:
     - name: Setup Terraform
       uses: hashicorp/setup-terraform@v3
 
-    - name: Terraform Init
+    - name: Terraform Init, Plan and Apply
       run: |
-        cd terraform # Change to the directory containing the .tf files
+        cd terraform
         terraform init
-
-    - name: Terraform Validate
-      run: |
-        cd terraform # Change to the directory containing the .tf files
-        terraform validate
-
-    - name: Terraform Plan
-      run: |
-        cd terraform # Change to the directory containing the .tf files
         terraform plan
-
-    - name: Terraform Apply
-      run: |
-        cd terraform # Change to the directory containing the .tf files
         terraform apply -auto-approve
