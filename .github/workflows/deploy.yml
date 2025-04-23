@@ -10,7 +10,6 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}  # Make sure to set region in Terraform variables
-  ALB_PUBLIC_URL_OUTPUT: alb_public_url  # This will be the output from Terraform
 
 jobs:
   deploy:
@@ -34,7 +33,6 @@ jobs:
 
     - name: Build Docker Image
       run: |
-        # Debug Docker Build
         echo "Building Docker image for repository: $ECR_REPOSITORY"
         docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
         docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
@@ -66,16 +64,4 @@ jobs:
     - name: Terraform Apply
       run: |
         cd terraform # Change to the directory containing the .tf files
-        terraform apply -auto-approve -no-color
-
-    - name: Output Public ALB URL
-      id: alb_url
-      run: |
-        cd terraform # Change to the directory containing the .tf files
-        ALB_URL=$(terraform output -raw alb_public_url)
-        echo "ALB Public URL: $ALB_URL"
-        echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV  # Set the output in GitHub environment variable
-
-    - name: Notify with Public ALB URL
-      run: |
-        echo "Strapi is now deployed! Access the Strapi application at the following public URL: ${{ env.ALB_URL }}"
+        terraform apply -auto-approve
