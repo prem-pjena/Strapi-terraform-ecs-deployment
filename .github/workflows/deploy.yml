@@ -10,67 +10,65 @@ env:
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
   TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
+  ALB_PUBLIC_URL_OUTPUT: alb_public_url
 
 jobs:
   deploy:
-    name: Build, Push to ECR & Deploy with Terraform
+    name: Build Docker Image, Push to ECR & Deploy Infra with Terraform
     runs-on: ubuntu-latest
 
     steps:
-      - name: Checkout Code
-        uses: actions/checkout@v3
+    - name: Checkout Code
+      uses: actions/checkout@v3
 
-      - name: Configure AWS Credentials
-        uses: aws-actions/configure-aws-credentials@v2
-        with:
-          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          aws-region: ${{ secrets.AWS_REGION }}
+    - name: Configure AWS Credentials
+      uses: aws-actions/configure-aws-credentials@v2
+      with:
+        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+        aws-region: ${{ env.AWS_REGION }}
 
-      - name: Log in to Amazon ECR
-        id: login-ecr
-        uses: aws-actions/amazon-ecr-login@v2
+    - name: Log in to Amazon ECR
+      uses: aws-actions/amazon-ecr-login@v2
 
-      - name: Debugging - Print Env Vars
-        run: |
-          echo "AWS_REGION=$AWS_REGION"
-          echo "ECR_REGISTRY=$ECR_REGISTRY"
-          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
+    - name: Debug: Print ENV Values
+      run: |
+        echo "DEBUG AWS_REGION: $AWS_REGION"
+        echo "DEBUG ECR_REGISTRY: $ECR_REGISTRY"
+        echo "DEBUG ECR_REPOSITORY: $ECR_REPOSITORY"
 
-      - name: Build Docker Image
-        run: |
-          echo "Building Docker image..."
-          docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
-          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
+    - name: Build Docker Image
+      run: |
+        docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
+        docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Push Docker Image to ECR
-        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+    - name: Push Docker Image to ECR
+      run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-      - name: Setup Terraform
-        uses: hashicorp/setup-terraform@v3
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v3
 
-      - name: Terraform Init
-        run: terraform init
+    - name: Terraform Init
+      run: terraform init
 
-      - name: Terraform Format
-        run: terraform fmt -check
+    - name: Terraform Format
+      run: terraform fmt -check
 
-      - name: Terraform Validate
-        run: terraform validate
+    - name: Terraform Validate
+      run: terraform validate
 
-      - name: Terraform Plan
-        run: terraform plan
+    - name: Terraform Plan
+      run: terraform plan
 
-      - name: Terraform Apply
-        run: terraform apply -auto-approve
+    - name: Terraform Apply
+      run: terraform apply -auto-approve
 
-      - name: Output ALB Public URL
-        id: alb_url
-        run: |
-          ALB_URL=$(terraform output -raw alb_public_url)
-          echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV
+    - name: Output Public ALB URL
+      id: alb_url
+      run: |
+        ALB_URL=$(terraform output -raw alb_public_url)
+        echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV
 
-      - name: Display Public URL
-        run: echo "App is deployed at $ALB_URL"
-        env:
-          ALB_URL: ${{ env.ALB_URL }}
+    - name: Notify with Public ALB URL
+      run: |
+        echo "Strapi deployed at: ${{ env.ALB_URL }}"
