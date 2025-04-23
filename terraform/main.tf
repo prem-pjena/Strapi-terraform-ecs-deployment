@@ -192,7 +192,3 @@ resource "aws_ecs_service" "strapi-service" {
   }
 }
 
-# Output ALB DNS
-output "strapi_alb_url" {
-  value = aws_lb.strapi_lb.dns_name
-}
