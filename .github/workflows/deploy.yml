@@ -3,80 +3,74 @@ name: CI/CD - Deploy Strapi on ECS Fargate with Terraform
 on:
   push:
     branches:
-      - main  # Trigger on main branch push
+      - main
 
 env:
   AWS_REGION: ${{ secrets.AWS_REGION }}
   ECR_REGISTRY: ${{ secrets.ECR_REGISTRY }}
   ECR_REPOSITORY: ${{ secrets.ECR_REPOSITORY }}
-  TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}  # Set region in Terraform variables
-  ALB_PUBLIC_URL_OUTPUT: alb_public_url  # Terraform output variable name
+  TF_VAR_AWS_REGION: ${{ secrets.AWS_REGION }}
 
 jobs:
   deploy:
-    name: Build Docker Image, Push to ECR & Deploy Infra with Terraform
+    name: Build, Push to ECR & Deploy with Terraform
     runs-on: ubuntu-latest
 
     steps:
-    - name: Checkout Code
-      uses: actions/checkout@v3
+      - name: Checkout Code
+        uses: actions/checkout@v3
 
-    - name: Configure AWS Credentials
-      uses: aws-actions/configure-aws-credentials@v2
-      with:
-        aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
-        aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-        aws-region: ${{ env.AWS_REGION }}
+      - name: Configure AWS Credentials
+        uses: aws-actions/configure-aws-credentials@v2
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ secrets.AWS_REGION }}
 
-    - name: Log in to Amazon ECR
-      id: login-ecr
-      uses: aws-actions/amazon-ecr-login@v2
+      - name: Log in to Amazon ECR
+        id: login-ecr
+        uses: aws-actions/amazon-ecr-login@v2
 
-    - name: Debugging: Print Environment Variables
-      run: |
-        echo "AWS Region: $AWS_REGION"
-        echo "ECR Registry: $ECR_REGISTRY"
-        echo "ECR Repository: $ECR_REPOSITORY"
+      - name: Debugging - Print Env Vars
+        run: |
+          echo "AWS_REGION=$AWS_REGION"
+          echo "ECR_REGISTRY=$ECR_REGISTRY"
+          echo "ECR_REPOSITORY=$ECR_REPOSITORY"
 
-    - name: Build Docker Image
-      run: |
-        echo "Building Docker image for repository: $ECR_REPOSITORY"
-        docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
-        docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
-        echo "Docker image tagged as: $ECR_REGISTRY/$ECR_REPOSITORY:latest"
+      - name: Build Docker Image
+        run: |
+          echo "Building Docker image..."
+          docker build -t $ECR_REPOSITORY:latest -f docker/Dockerfile .
+          docker tag $ECR_REPOSITORY:latest $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-    - name: Push Docker Image to ECR
-      run: |
-        echo "Pushing Docker image to ECR"
-        docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
+      - name: Push Docker Image to ECR
+        run: docker push $ECR_REGISTRY/$ECR_REPOSITORY:latest
 
-    - name: Setup Terraform
-      uses: hashicorp/setup-terraform@v3
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
 
-    - name: Terraform Init
-      run: terraform init
+      - name: Terraform Init
+        run: terraform init
 
-    - name: Terraform Format
-      run: terraform fmt -check
+      - name: Terraform Format
+        run: terraform fmt -check
 
-    - name: Terraform Validate
-      run: terraform validate
+      - name: Terraform Validate
+        run: terraform validate
 
-    - name: Terraform Plan
-      run: terraform plan
+      - name: Terraform Plan
+        run: terraform plan
 
-    - name: Terraform Apply
-      run: terraform apply -auto-approve
+      - name: Terraform Apply
+        run: terraform apply -auto-approve
 
-    - name: Output Public ALB URL
-      id: alb_url
-      run: |
-        ALB_URL=$(terraform output -raw alb_public_url)
-        echo "ALB Public URL: $ALB_URL"
-        echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV  # Store for later step
+      - name: Output ALB Public URL
+        id: alb_url
+        run: |
+          ALB_URL=$(terraform output -raw alb_public_url)
+          echo "ALB_URL=$ALB_URL" >> $GITHUB_ENV
 
-    - name: Notify with Public ALB URL
-      run: |
-        echo "Strapi is now deployed! Access the Strapi application at the following public URL: $ALB_URL"
-      env:
-        ALB_URL: ${{ env.ALB_URL }}
+      - name: Display Public URL
+        run: echo "App is deployed at $ALB_URL"
+        env:
+          ALB_URL: ${{ env.ALB_URL }}
