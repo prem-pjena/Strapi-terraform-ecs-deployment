@@ -12,7 +12,7 @@ Strapi is an open-source headless CMS that provides a robust API backend. This p
 - **Strapi Application Deployment**: Deploy a Strapi application containerized with Docker on AWS ECS.
 - **Infrastructure as Code (IaC)**: Terraform code to set up ECS, ECR, VPC, Load Balancers, and other necessary resources.
 - **Scalability**: Using AWS Fargate for serverless container deployment.
-- **CI/CD Pipeline (Optional)**: Configure a GitHub Actions pipeline for continuous integration and deployment.
+- **CI/CD Pipeline**: Configured a **GitHub Actions** pipeline for continuous integration and deployment to automate testing, building, and deployment processes.
 
 ## Architecture
 
@@ -86,6 +86,16 @@ docker push <aws-account-id>.dkr.ecr.us-east-1.amazonaws.com/strapi-app:latest
 
 After the `terraform apply` completes, navigate to your Load Balancer URL to verify that Strapi is running successfully.
 
+### 8. CI/CD Pipeline
+
+The project includes a CI/CD pipeline using **GitHub Actions** to automate the process of deploying new code changes. The workflow is configured to trigger on push to the `main` branch, including:
+
+- **Testing**: Unit tests to ensure code quality.
+- **Docker Build**: Build a Docker image for the Strapi application.
+- **Deployment**: Automatically deploy to AWS ECS Fargate on successful changes.
+
+The CI/CD pipeline ensures continuous integration and smooth deployment of any updates to the Strapi application.
+
 ## Cleanup
 
 To destroy the deployed infrastructure and clean up AWS resources, run:
@@ -93,6 +103,7 @@ To destroy the deployed infrastructure and clean up AWS resources, run:
 ```bash
 terraform destroy
 ```
+
 ## Contributing
 
 Feel free to fork this repository and create a pull request for any improvements, bug fixes, or enhancements.
@@ -100,6 +111,3 @@ Feel free to fork this repository and create a pull request for any improvements
 ## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
-
----
-Triggering CI/CD pipeline
